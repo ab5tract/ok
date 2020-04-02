@@ -5,6 +5,7 @@ var os = require('os');
 var path = require('path');
 var readline = require('readline');
 var conv = require('./convert');
+var conf = { clip:1024 };
 help = `oK has atom, list (2;\`c), dict \`a\`b!(2;\`c) and func {[x;y]x+y}
 20 primitives/verbs, 6 operators/adverbs and 3 system functions
 
@@ -18,8 +19,8 @@ Verb       (unary)    Adverb             Noun         (null)
 & min|and   where
 | max|or    reverse   System             list (2;3.4;\`ab)
 < less      asc       0: file r/w        dict \`a\`b!(2;\`c)
-> more      desc      5: printable form  view f::32+1.8*c
-= equal     group                        func {[c]32+1.8*c}
+> more      desc      1: json r/w        view f::32+1.8*c
+= equal     group     5: printable form  func {[c]32+1.8*c}
 ~ match     not
 , concat    enlist
 ^ except    null                         \\t x   time
@@ -65,9 +66,38 @@ function write(x, y) {
 	}
 	return y;
 }
-for (var i = 0; i < 2; i++) { ok.setIO('0:', i, read ); }
-for (var i = 2; i < 6; i++) { ok.setIO('0:', i, write); }
-for (var i = 0; i < 2; i++) { ok.setIO('5:', i, function(x) { return conv.tok(ok.format(x)); }); }
+function readJSON(x) {
+	var f = str(x);
+	if (f) {
+		f = path.resolve(process.cwd(), f);
+		if (!fs.statSync(f).isDirectory()) {
+			var t;
+			try {
+				t = JSON.parse(fs.readFileSync(f, 'utf8'));
+			} catch (err) {
+				process.stdout.write('JSON parsing error: ' + err.message);
+			}
+			if (t) {
+				return conv.tok(t);
+			}
+		}
+	}
+}
+function writeJSON(x, y) {
+	var s = (typeof y !== 'string') ? conv.tojs(y) : y;
+	var f = str(x);
+	if (f) {
+		fs.writeFileSync(path.resolve(process.cwd(), f), s);
+	} else {
+		fs.writeSync(process.stdout.fd, s);
+	}
+	return y;
+}
+ok.setIO('0:', 1, read);
+ok.setIO('1:', 1, readJSON);
+ok.setIO('5:', 1, function(x) { return conv.tok(ok.format(x)); });
+  for (var i = 2; i < 6; i++) { ok.setIO('0:', i, write); }
+  for (var i = 2; i < 6; i++) { ok.setIO('1:', i, writeJSON); }
 
 var env = ok.baseEnv();
 
@@ -107,32 +137,70 @@ var rl = readline.createInterface({
 		return [names, prefix];
 	}
 });
+function clip(s) {
+	if (!conf.clip || s.length < conf.clip) {
+		return s;
+	} else {
+		return s.substring(0,conf.clip - 7)+' [...] \n';
+	}
+}
+function chconf(t,s) {
+	try {
+		if (t==0) {
+			var v = parseInt(s);
+			if (v || v==0) {
+				conf.clip = v;
+			} else {
+				throw Error('ERROR: Could not parse '+s+' as number');
+			}
+		}
+	} catch (err) {
+		process.stdout.write(err.message + '\n');
+	}
+}
+function pconf(t) {
+	var s;
+	if (t==0) {
+		var cliplength = conf.clip ? conf.clip : "--disabled--";
+		return 'Max repl response (chars): ' + cliplength;
+	}
+}
 rl.on('line', function (line) {
 	if (line === '\\\\') { process.exit(0); }
 	var showtime = false;
 	var showhelp = false;
+	var runline  = true;
+	var output;
 	if (line.lastIndexOf("\\t") == 0) {
 		line = line.slice(2);
 		showtime = true;
 	} else if (line.lastIndexOf("\\h") == 0) {
-		showhelp = true;
+		output = help;
+		runline = false;
+	} else if (line.lastIndexOf("\\C") == 0) {
+		line = line.slice(2).trim();
+		if (line) {
+			chconf(0,line);
+		}
+		output = pconf(0);
+		runline = false;
 	}
-	try {
-		if (line.trim()) {
-			if (!showhelp) {
+	if (runline) {
+		try {
+			if (line.trim()) {
 				var starttime = new Date().getTime();
-				var output = ok.format(ok.run(ok.parse(line), env)) + '\n';
+				output = ok.format(ok.run(ok.parse(line), env)) + '\n';
 				if (showtime) {
 					var endtime = new Date().getTime();
 					output += "completed in "+(endtime-starttime)+"ms.\n";
 				}
-			} else {
-				output = help;
+				process.stdout.write(clip(output));
 			}
-			process.stdout.write(output);
+		} catch (err) {
+			process.stdout.write(err.message + '\n');
 		}
-	} catch (err) {
-		process.stdout.write(err.message + '\n');
+	} else {
+		process.stdout.write(output + '\n');
 	}
 	rl.prompt();
 });

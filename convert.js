@@ -25,19 +25,26 @@ function tok(v) {
 		return { t:3, v:r };
 	}
 	if (typeof v == 'object') {
-		var r = { t:4, k:{ t:3, v:[] }, v:{ t:3, v:[] }};
-		var k = Object.keys(v);
-		for(var z=0;z<k.length;z++) {
-			r.k.v.push( { t:2, v:k[z] } );
-			r.v.v.push( tok(v[k[z]]) );
+		if (v) {
+			var r = { t:4, k:{ t:3, v:[] }, v:{ t:3, v:[] }};
+			var k = Object.keys(v);
+			for(var z=0;z<k.length;z++) {
+				r.k.v.push( { t:2, v:k[z] } );
+				r.v.v.push( tok(v[k[z]]) );
+			}
+			return r;
+		} else {
+			return { t:11, v:null };
 		}
-		return r;
 	}
 	throw new Error("cannot convert '"+v+"' to a K datatype.");
 }
 
 function tojs(v) {
-	if (v.t == 0 || v.t == 2) {
+	if (v.t == 0 || v.t == 11) {
+		return v.v ? v.v : null;
+	}
+	if (v.t == 2) {
 		return v.v;
 	}
 	if (v.t == 1) {
@@ -52,7 +59,7 @@ function tojs(v) {
 	}
 	if (v.t == 4) {
 		var r = {};
-		for(var z=0;z<v.k.v.length;z++) { r[v.k.v[z]] = tojs(v.v.v[z]); }
+		for(var z=0;z<v.k.v.length;z++) { r[tojs(v.k.v[z])] = tojs(v.v.v[z]); }
 		return r;
 	}
 	throw new Error("cannot convert '"+JSON.stringify(v)+"' to a JavaScript datatype.");
