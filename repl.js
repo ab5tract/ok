@@ -70,7 +70,6 @@ function readJSON(x) {
 	var f = str(x);
 	if (f) {
 		f = path.resolve(process.cwd(), f);
-		// ? would it make sense to also give back a directory list in json when the string is a directory ?
 		if (!fs.statSync(f).isDirectory()) {
 			var t;
 			try {
