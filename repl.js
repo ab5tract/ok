@@ -79,7 +79,7 @@ function readJSON(x) {
 				process.stdout.write('JSON parsing error: ' + err.message);
 			}
 			if (t) {
-				return conv.tok(t); // ! this doesn't do the job yet for my own test cases
+				return conv.tok(t);
 			}
 		}
 	}
