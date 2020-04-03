@@ -5,7 +5,7 @@ var os = require('os');
 var path = require('path');
 var readline = require('readline');
 var conv = require('./convert');
-var clip = 1024;
+var conf = { clip:1024 };
 help = `oK has atom, list (2;\`c), dict \`a\`b!(2;\`c) and func {[x;y]x+y}
 20 primitives/verbs, 6 operators/adverbs and 3 system functions
 
@@ -127,36 +127,54 @@ var rl = readline.createInterface({
 		return [names, prefix];
 	}
 });
+function clip(s) {
+	if (!conf.clip) {
+		return s;
+	} else {
+		return s.substring(0,conf.clip - 5)+" ... ";
+	}
+}
+function chconf(t,s) {
+	try {
+		if (t==0) {
+			var v = parseInt(s);
+			if (v) {
+				conf.clip = v;
+			}
+		}
+	} catch (err) {
+		process.stdout.write(err.message + '\n');
+	}
+}
 rl.on('line', function (line) {
 	if (line === '\\\\') { process.exit(0); }
 	var showtime = false;
 	var showhelp = false;
+	var runline  = true;
 	if (line.lastIndexOf("\\t") == 0) {
 		line = line.slice(2);
 		showtime = true;
 	} else if (line.lastIndexOf("\\h") == 0) {
-		showhelp = true;
+		process.stdout.write(help);
+		runline = false;
+	} else if (line.lastIndexOf("\\C") == 0) {
+		chconf(0,line.slice(2));
+		runline = false;
 	}
-	try {
-		if (line.trim()) {
-			if (!showhelp) {
+	if (runline) {
+		try {
+			if (line.trim()) {
 				var starttime = new Date().getTime();
 				var output = ok.format(ok.run(ok.parse(line), env)) + '\n';
 				if (showtime) {
 					var endtime = new Date().getTime();
 					output += "completed in "+(endtime-starttime)+"ms.\n";
 				}
-			} else {
-				output = help;
+				process.stdout.write(clip(output));
 			}
-			if (!clip) {
-				process.stdout.write(output);
-			} else {
-				process.stdout.write(output.substring(0,clip - 5)+" ... ");
-			}
+		} catch (err) {
+			process.stdout.write(err.message + '\n');
 		}
-	} catch (err) {
-		process.stdout.write(err.message + '\n');
 	}
 	rl.prompt();
 });
