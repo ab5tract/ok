@@ -127,7 +127,7 @@ var rl = readline.createInterface({
 	}
 });
 function clip(s) {
-	if (!conf.clip) {
+	if (!conf.clip || s.length < conf.clip) {
 		return s;
 	} else {
 		return s.substring(0,conf.clip - 7)+' [...] \n';
