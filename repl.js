@@ -87,6 +87,7 @@ ok.setIO('0:', 1, read);
 ok.setIO('1:', 1, readJSON);
 ok.setIO('5:', 1, function(x) { return conv.tok(ok.format(x)); });
   for (var i = 2; i < 6; i++) { ok.setIO('0:', i, write); }
+  for (var i = 2; i < 6; i++) { ok.setIO('1:', i, write); }
 
 var env = ok.baseEnv();
 
@@ -130,19 +131,28 @@ function clip(s) {
 	if (!conf.clip) {
 		return s;
 	} else {
-		return s.substring(0,conf.clip - 5)+" ... ";
+		return s.substring(0,conf.clip - 7)+' [...] \n';
 	}
 }
 function chconf(t,s) {
 	try {
 		if (t==0) {
 			var v = parseInt(s);
-			if (v) {
+			if (v || v==0) {
 				conf.clip = v;
+			} else {
+				throw Error('ERROR: Could not parse '+s+' as number');
 			}
 		}
 	} catch (err) {
 		process.stdout.write(err.message + '\n');
+	}
+}
+function pconf(t) {
+	var s;
+	if (t==0) {
+		var cliplength = conf.clip ? conf.clip : "--disabled--";
+		return 'Max repl response (chars): ' + cliplength;
 	}
 }
 rl.on('line', function (line) {
@@ -150,21 +160,26 @@ rl.on('line', function (line) {
 	var showtime = false;
 	var showhelp = false;
 	var runline  = true;
+	var output;
 	if (line.lastIndexOf("\\t") == 0) {
 		line = line.slice(2);
 		showtime = true;
 	} else if (line.lastIndexOf("\\h") == 0) {
-		process.stdout.write(help);
+		output = help;
 		runline = false;
 	} else if (line.lastIndexOf("\\C") == 0) {
-		chconf(0,line.slice(2));
+		line = line.slice(2).trim();
+		if (line) {
+			chconf(0,line);
+		}
+		output = pconf(0);
 		runline = false;
 	}
 	if (runline) {
 		try {
 			if (line.trim()) {
 				var starttime = new Date().getTime();
-				var output = ok.format(ok.run(ok.parse(line), env)) + '\n';
+				output = ok.format(ok.run(ok.parse(line), env)) + '\n';
 				if (showtime) {
 					var endtime = new Date().getTime();
 					output += "completed in "+(endtime-starttime)+"ms.\n";
@@ -174,6 +189,8 @@ rl.on('line', function (line) {
 		} catch (err) {
 			process.stdout.write(err.message + '\n');
 		}
+	} else {
+		process.stdout.write(output + '\n');
 	}
 	rl.prompt();
 });
