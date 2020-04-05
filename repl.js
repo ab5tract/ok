@@ -84,7 +84,7 @@ function readJSON(x) {
 	}
 }
 function writeJSON(x, y) {
-	var s = (typeof y !== 'string') ? conv.tojs(y) : y;
+	var s = conv.tojs(y);
 	var f = str(x);
 	if (f) {
 		fs.writeFileSync(path.resolve(process.cwd(), f), s);
