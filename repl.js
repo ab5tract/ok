@@ -56,6 +56,7 @@ function read(x) {
 }
 function write(x, y) {
 	var s = conv.tojs(y);
+	process.stdout.write("wtf " + y + " s: " +s);
 	if (Array.isArray(s)) { s = s.join('\n') + '\n'; }
 	if (typeof s !== 'string') { throw Error('ERROR: type'); }
 	var f = str(x);
@@ -83,10 +84,21 @@ function readJSON(x) {
 		}
 	}
 }
+function writeJSON(x, y) {
+	var s = (typeof y !== 'string') ? conv.tojs(y) : y;
+	var f = str(x);
+	if (f) {
+		fs.writeFileSync(path.resolve(process.cwd(), f), s);
+	} else {
+		fs.writeSync(process.stdout.fd, s);
+	}
+	return y;
+}
 ok.setIO('0:', 1, read);
 ok.setIO('1:', 1, readJSON);
 ok.setIO('5:', 1, function(x) { return conv.tok(ok.format(x)); });
   for (var i = 2; i < 6; i++) { ok.setIO('0:', i, write); }
+  for (var i = 2; i < 6; i++) { ok.setIO('1:', i, writeJSON); }
 
 var env = ok.baseEnv();
 
