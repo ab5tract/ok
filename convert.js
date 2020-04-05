@@ -59,7 +59,7 @@ function tojs(v) {
 	}
 	if (v.t == 4) {
 		var r = {};
-		for(var z=0;z<v.k.v.length;z++) { r[v.k.v[z]] = tojs(v.v.v[z]); }
+		for(var z=0;z<v.k.v.length;z++) { r[tojs(v.k.v[z])] = tojs(v.v.v[z]); }
 		return r;
 	}
 	throw new Error("cannot convert '"+JSON.stringify(v)+"' to a JavaScript datatype.");
