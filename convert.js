@@ -37,7 +37,7 @@ function tok(v) {
 }
 
 function tojs(v) {
-	if (v.t == 0 || v.t == 11)	{ return v.v ? v.v : null; }
+	if (v.t == 0 || v.t == 11)	{ return (v.v || v.v == 0) ? v.v : null; }
 	if (v.t == 2) 				{ return v.v; }
 	if (v.t == 1) 				{ return String.fromCharCode(v.v); }
 	if (v.t == 3) {
