@@ -66,8 +66,6 @@ function readp(dt, x) {
 		if (j) 		{ return conv.tok(j); }
 	}
 }
-function read(x)			{ return readp(0, x); }
-function readJSON(x) 		{ return readp(1, x); }
 function writep(dt, x, y) {
 	var s = conv.tojs(y);
 	if (dt==0) {
@@ -81,13 +79,11 @@ function writep(dt, x, y) {
 	else 	{ fs.writeSync(process.stdout.fd, s); }
 	return y;
 }
-function write(x, y) 		{ return writep(0, x, y); }
-function writeJSON(x, y) 	{ return writep(1, x, y); }
-ok.setIO('0:', 1, read);
-ok.setIO('1:', 1, readJSON);
+for (var i = 0; i < 2; i++) { ok.setIO('0:', i, function(x) { return readp(0,x)}); }
+for (var i = 0; i < 2; i++) { ok.setIO('1:', i, function(x) { return readp(1,x)}); }
+for (var i = 2; i < 6; i++) { ok.setIO('0:', i, function(x,y) 	{ return writep(0,x,y); }); }
+for (var i = 2; i < 6; i++) { ok.setIO('1:', i, function(x,y) 	{ return writep(1,x,y); }); }
 ok.setIO('5:', 1, function(x) { return conv.tok(ok.format(x)); });
-  for (var i = 2; i < 6; i++) { ok.setIO('0:', i, write); }
-  for (var i = 2; i < 6; i++) { ok.setIO('1:', i, writeJSON); }
 
 var env = ok.baseEnv();
 
