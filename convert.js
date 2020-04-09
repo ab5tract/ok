@@ -11,6 +11,7 @@
 "use strict";
 
 function tok(v) {
+	if (v == null) { return { t:11, v:null }; }
 	if (typeof v == 'number') { return { t:0, v:v }; }
 	if (typeof v == 'string') {
 		var r = [];
@@ -23,15 +24,13 @@ function tok(v) {
 		return { t:3, v:r };
 	}
 	if (typeof v == 'object') {
-		if (v) {
-			var r = { t:4, k:{ t:3, v:[] }, v:{ t:3, v:[] }};
-			var k = Object.keys(v);
-			for(var z=0;z<k.length;z++) {
-				r.k.v.push( { t:2, v:k[z] } );
-				r.v.v.push( tok(v[k[z]]) );
-			}
-			return r;
-		} else { return { t:11, v:null }; }
+		var r = { t:4, k:{ t:3, v:[] }, v:{ t:3, v:[] }};
+		var k = Object.keys(v);
+		for(var z=0;z<k.length;z++) {
+			r.k.v.push( { t:2, v:k[z] } );
+			r.v.v.push( tok(v[k[z]]) );
+		}
+		return r;
 	}
 	throw new Error("cannot convert '"+v+"' to a K datatype.");
 }
