@@ -60,10 +60,8 @@ function readp(dt, x) {
 		else if (dt==1) { tojs = b.toString('utf8', 0, n); }
 	}
 	if (tojs) {
-		var j;
-		try 		{ j = JSON.parse(tojs); }
+		try 		{ return conv.tok(JSON.parse(tojs)); }
 		catch (err)	{ throw Error('JSON parsing error: ' + err.message); }
-		if (j) 		{ return conv.tok(j); }
 	}
 }
 function writep(dt, x, y) {
